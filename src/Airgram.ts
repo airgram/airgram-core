@@ -24,7 +24,7 @@ export class Airgram<ContextT extends ag.Context>
 
   private _updates: ag.Updates<ContextT>
 
-  private provider: ag.TdProvider<any>
+  public readonly provider: ag.TdProvider<any>
 
   constructor (config: ag.AirgramConfig<ContextT>) {
     super()

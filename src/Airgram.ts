@@ -1,4 +1,4 @@
-import { apiFactory, ApiMethods } from 'airgram-api'
+import { apiFactory, ApiMethods } from 'airgram-api/apiFactory'
 import { compose, Composer, createContext, optional, Updates } from './components'
 import * as ag from './types/airgram'
 

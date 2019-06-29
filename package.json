@@ -1,0 +1,50 @@
+{
+  "name": "airgram-core",
+  "version": "1.1.0",
+  "homepage": "https://airgram.io",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "keywords": [
+    "telegram",
+    "tdlib",
+    "telegram bot",
+    "telegram client",
+    "telegram javascript",
+    "telegram typescript"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf dist",
+    "compile": "npm run clean && tsc",
+    "deploy": "np --yolo",
+    "dev": "nodemon --config nodemon.json",
+    "lint": "tslint --project \".\"",
+    "prepublishOnly": "npm run compile",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "pre-commit": "lint",
+  "author": "Alexander Krisko",
+  "license": "GPL-3.0",
+  "repository": "https://github.com/airgram/airgram-core",
+  "dependencies": {
+    "airgram-api": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^12.0.10",
+    "eslint": "^6.0.1",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-friendly-formatter": "^4.0.1",
+    "eslint-plugin-import": "^2.18.0",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "nodemon": "^1.19.1",
+    "np": "^5.0.3",
+    "pre-commit": "^1.2.2",
+    "ts-node": "^8.3.0",
+    "tslint": "^5.18.0",
+    "tslint-config-standard": "^8.0.1",
+    "tslint-eslint-rules": "^5.4.0",
+    "typescript": "^3.2.4"
+  }
+}

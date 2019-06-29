@@ -20,11 +20,11 @@ export class Airgram<ContextT extends ag.Context>
 
   public handleError: ag.ErrorHandler
 
+  public readonly provider: ag.TdProvider<any>
+
   private _createContext?: (options: ag.ContextOptions) => ContextT
 
   private _updates: ag.Updates<ContextT>
-
-  public readonly provider: ag.TdProvider<any>
 
   constructor (config: ag.AirgramConfig<ContextT>) {
     super()

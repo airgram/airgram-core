@@ -23,8 +23,8 @@ export type TdLibConfig = Omit<api.TdlibParametersInput, '_'>
 
 export type PlainObjectToModelTransformer = (plainObject: Record<string, any>) => ClassType<any> | Record<string, any>
 
-export interface AirgramConfig<ContextT> extends TdLibConfig {
-  provider: TdProvider<any>
+export interface AirgramConfig<ContextT, ProviderT extends TdProvider = TdProvider> extends TdLibConfig {
+  provider: ProviderT
   contextFactory?: ContextFactory<ContextT>
   databaseEncryptionKey?: string
   name?: string
@@ -32,9 +32,11 @@ export interface AirgramConfig<ContextT> extends TdLibConfig {
   models?: PlainObjectToModelTransformer
 }
 
-export interface Airgram<ContextT = Context> extends Composer<ContextT> {
+export interface Airgram<ContextT = Context, ProviderT extends TdProvider = TdProvider>
+  extends Composer<ContextT> {
   readonly api: api.ApiMethods
   readonly config: AirgramConfig<ContextT>
+  readonly provider: ProviderT
   readonly updates: Updates<ContextT>
   readonly name: string
   handleError: ErrorHandler
@@ -370,7 +372,7 @@ export interface Updates<ContextT> extends Composer<ContextT> {
   ): Composer<ContextT & { update: UpdateT }>
 }
 
-export interface TdProvider<ClientT> {
+export interface TdProvider {
   initialize (
     handleUpdate: (update: Record<string, any>) => Promise<any>,
     handleError: (error: any) => void,

@@ -11,22 +11,22 @@ const DEFAULT_CONFIG: Partial<ag.AirgramConfig<any>> = {
   systemVersion: 'UNKNOWN VERSION'
 }
 
-export class Airgram<ContextT extends ag.Context>
-  extends Composer<ContextT> implements ag.Airgram<ContextT> {
+export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvider>
+  extends Composer<ContextT> implements ag.Airgram<ContextT, ProviderT> {
 
   public readonly api: ApiMethods
 
-  public readonly config: ag.AirgramConfig<ContextT>
+  public readonly config: ag.AirgramConfig<ContextT, ProviderT>
 
   public handleError: ag.ErrorHandler
 
-  public readonly provider: ag.TdProvider<any>
+  public readonly provider: ProviderT
 
   private _createContext?: (options: ag.ContextOptions) => ContextT
 
   private _updates: ag.Updates<ContextT>
 
-  constructor (config: ag.AirgramConfig<ContextT>) {
+  constructor (config: ag.AirgramConfig<ContextT, ProviderT>) {
     super()
 
     this.config = { ...DEFAULT_CONFIG, ...config }

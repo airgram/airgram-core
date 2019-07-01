@@ -1,6 +1,6 @@
 import * as ag from '../types/airgram'
 
-export abstract class TdProvider<ClientT = any> implements ag.TdProvider<ClientT> {
+export abstract class TdProvider<ClientT = any> implements ag.TdProvider {
   private _client: ClientT
 
   get client (): ClientT {

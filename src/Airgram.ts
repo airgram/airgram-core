@@ -1,5 +1,5 @@
 import { apiFactory, ApiMethods } from 'airgram-api/apiFactory'
-import { compose, Composer, createContext, optional, Updates } from './components'
+import { compose, Composer, createContext, optional, TDLibError, Updates } from './components'
 import * as ag from './types/airgram'
 
 const DEFAULT_CONFIG: Partial<ag.AirgramConfig<any>> = {
@@ -46,8 +46,9 @@ export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvide
     this.provider = provider
 
     this.handleError = (error: any/*, ctx*/) => {
-      // const { code, message, ...details } = error
-      // console.error(`[${ctx ? ctx._ : 'undefined'}][${code}]: ${message} ${new Serializable(details)}`)
+      if (error.name === 'TDLibError') {
+        return { _: 'error', code: error.code, message: error.message }
+      }
       throw error
     }
 
@@ -91,21 +92,19 @@ export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvide
     params?: ParamsT,
     state?: Record<string, any>
   ): Promise<ResponseT> {
-    return new Promise((resolve, reject) => {
-      const ctx = this.createContext(method, state || {}, {
-        request: {
-          method,
-          params
-        }
-      })
+    const ctx = this.createContext(method, state || {}, {
+      request: {
+        method,
+        params
+      }
+    })
+    return new Promise<ResponseT>((resolve, reject) => {
       const handler = compose<ag.Context<ParamsT, ResponseT>>([
         this.middleware(),
         this.apiMiddleware()
       ])
-      return handler(ctx, async () => resolve(ctx.response))
-        .catch((error) => this.handleError(error, ctx))
-        .catch(reject)
-    })
+      return handler(ctx, async () => resolve(ctx.response)).catch(reject)
+    }).catch((error) => this.handleError(error, ctx))
   }
 
   private createContext (

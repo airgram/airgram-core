@@ -17,7 +17,7 @@ export type MiddlewareFn<ContextT> = (ctx: ContextT, next: () => Promise<any>) =
 export type MiddlewarePromise<ContextT> = (ctx: ContextT, next?: () => Promise<any>) => Promise<any>
 export type Middleware<ContextT = any> = { middleware: () => MiddlewareFn<ContextT> } | MiddlewareFn<ContextT>
 
-export type ErrorHandler = (error: Error, ctx: Record<string, any>) => any
+export type ErrorHandler = (error: Error, ctx?: Record<string, any>) => any
 
 export type TdLibConfig = Omit<api.TdlibParametersInput, '_'>
 

@@ -1,5 +1,6 @@
-import { apiFactory, ApiMethods } from 'airgram-api/apiFactory'
-import { compose, Composer, createContext, optional, TDLibError, Updates } from './components'
+import { apiFactory, ErrorUnion } from 'airgram-api'
+import { ApiMethods } from 'airgram-api/apiFactory'
+import { compose, Composer, createContext, optional, Serializable, Updates } from './components'
 import * as ag from './types/airgram'
 
 const DEFAULT_CONFIG: Partial<ag.AirgramConfig<any>> = {
@@ -39,17 +40,20 @@ export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvide
       (update) => this.handleUpdate(update),
       (message) => {
         const error = message instanceof Error ? message : new Error(message)
-        this.handleError(error, { _: '' })
+        this.handleError(error)
       },
       this.config.models
     )
     this.provider = provider
 
-    this.handleError = (error: any/*, ctx*/) => {
-      if (error.name === 'TDLibError') {
-        return { _: 'error', code: error.code, message: error.message }
+    this.handleError = (error: any, ctx?: Record<string, any>): ErrorUnion => {
+      // tslint:disable-next-line:no-console
+      console.error(`[Airgram error] ${ctx && ctx._ ? `[${ctx._}]` : ''} ${new Serializable(error)}`)
+      return {
+        _: 'error',
+        code: 406,
+        message: error.message
       }
-      throw error
     }
 
     this.callApi = this.callApi.bind(this)

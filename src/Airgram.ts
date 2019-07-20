@@ -1,33 +1,34 @@
 import { apiFactory, ErrorUnion } from 'airgram-api'
 import { ApiMethods } from 'airgram-api/apiFactory'
-import { compose, Composer, createContext, optional, Serializable, Updates } from './components'
-import * as ag from './types/airgram'
+import { Composer, createContext, Serializable, Updates } from './components'
 
-const DEFAULT_CONFIG: Partial<ag.AirgramConfig<any>> = {
+const DEFAULT_CONFIG: Partial<Airgram.Config<any>> = {
   applicationVersion: '0.1.0',
   databaseDirectory: './db',
   databaseEncryptionKey: '',
   deviceModel: 'UNKNOWN DEVICE',
+  logVerbosityLevel: 2,
   systemLanguageCode: 'en',
   systemVersion: 'UNKNOWN VERSION'
 }
 
-export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvider>
-  extends Composer<ContextT> implements ag.Airgram<ContextT, ProviderT> {
+export class Airgram<ContextT extends Airgram.Context, ProviderT extends Airgram.TdProvider>
+  extends Composer<ContextT> implements Airgram.AirgramInstance<ContextT, ProviderT> {
 
   public readonly api: ApiMethods
 
-  public readonly config: ag.AirgramConfig<ContextT, ProviderT>
+  public readonly config: Airgram.Config<ContextT, ProviderT>
 
-  public handleError: ag.ErrorHandler
+  public handleError: Airgram.ErrorHandler
 
   public readonly provider: ProviderT
 
-  private _createContext?: (options: ag.ContextOptions) => ContextT
+  private _createContext?: (options: Airgram.ContextOptions) => ContextT
 
-  private _updates: ag.Updates<ContextT>
+  // private _updates?: Airgram.Updates<ContextT & { update: Airgram.Update }>
+  private _updates?: Airgram.Updates<any>
 
-  constructor (config: ag.AirgramConfig<ContextT, ProviderT>) {
+  constructor (config: Airgram.Config<ContextT, ProviderT>) {
     super()
 
     this.config = { ...DEFAULT_CONFIG, ...config }
@@ -47,17 +48,29 @@ export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvide
     this.provider = provider
 
     this.handleError = (error: any, ctx?: Record<string, any>): ErrorUnion => {
-      // tslint:disable-next-line:no-console
-      console.error(`[Airgram error] ${ctx && ctx._ ? `[${ctx._}]` : ''} ${new Serializable(error)}`)
-      return {
-        _: 'error',
-        code: 406,
-        message: error.message
+      if (error.name === 'TDLibError') {
+        // tslint:disable-next-line:no-console
+        console.error(`[Airgram error] ${ctx && ctx._ ? `[${ctx._}]` : ''} ${new Serializable(error)}`)
+        return {
+          _: 'error',
+          code: 406,
+          message: error.message
+        }
       }
+      throw error
     }
 
     this.callApi = this.callApi.bind(this)
+    this.emit = this.emit.bind(this)
     this.api = apiFactory(this.callApi)
+
+    if (config.logVerbosityLevel) {
+      this.api.setLogVerbosityLevel({
+        newVerbosityLevel: config.logVerbosityLevel
+      }).catch((error) => {
+        throw error
+      })
+    }
 
     setTimeout(() => this.api.getAuthorizationState(), 0)
   }
@@ -66,10 +79,10 @@ export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvide
     return this.config.name || 'airgram'
   }
 
-  get updates (): ag.Updates<ContextT> {
+  get updates (): Airgram.Updates<ContextT> {
     if (!this._updates) {
       this._updates = new Updates<ContextT>()
-      this.use(this._updates)
+      this.use<{ update: Airgram.Update }>(this._updates)
     }
     return this._updates
   }
@@ -78,15 +91,15 @@ export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvide
     this.handleError = handler
   }
 
-  public emit (update: ag.TdUpdate): Promise<any> {
+  public emit (update: Airgram.TdUpdate): Promise<any> {
     return this.handleUpdate(update)
   }
 
   private apiMiddleware () {
-    return optional(
-      (ctx: ag.Context) => ctx.request,
-      async (ctx, next) => this.provider.send(ctx.request)
-        .then((response) => ctx.response = response)
+    return Composer.optional(
+      (ctx: Airgram.Context) => ctx.request,
+      async (ctx: Airgram.Context, next?: Airgram.NextFn) => this.provider.send(ctx.request!)
+        .then((response: Airgram.TdResponse) => ctx.response = response)
         .then(next)
     )
   }
@@ -103,7 +116,7 @@ export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvide
       }
     })
     return new Promise<ResponseT>((resolve, reject) => {
-      const handler = compose<ag.Context<ParamsT, ResponseT>>([
+      const handler = Composer.compose<Airgram.Context<ParamsT, ResponseT>>([
         this.middleware(),
         this.apiMiddleware()
       ])
@@ -129,6 +142,6 @@ export class Airgram<ContextT extends ag.Context, ProviderT extends ag.TdProvide
 
   private handleUpdate (update: Record<string, any>): Promise<any> {
     const ctx: ContextT = this.createContext(update._, {}, { update })
-    return this.middleware()(ctx).catch((error) => this.handleError(error, ctx))
+    return this.middleware()(ctx, Composer.noop).catch((error: Error) => this.handleError(error, ctx))
   }
 }

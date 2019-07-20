@@ -1,13 +1,13 @@
 export class Serializable {
-  private readonly dataObject = {}
+  private readonly dataObject: Record<string, any> = {}
 
-  constructor (data) {
+  constructor (data: Error) {
     if (!data) {
       return
     }
 
     if (data instanceof Error) {
-      Object.getOwnPropertyNames(data).forEach((name) => (this.dataObject[name] = data[name]))
+      (Object.getOwnPropertyNames(data)).forEach((name: string) => (this.dataObject[name] = (data as any)[name]))
       return
     }
 

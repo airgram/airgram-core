@@ -1,9 +1,8 @@
 /*tslint:disable:no-empty*/
 
-import * as ag from '../types/airgram'
+import { Airgram } from '../Airgram'
 
-type NoopFn = () => void
-const noop: NoopFn = () => {}
+const noop: Airgram.NextFn = () => {}
 
 function normalizePredicateArguments (argument: string | string[], prefix?: string): string[] {
   const args = Array.isArray(argument) ? argument : [argument]
@@ -13,39 +12,40 @@ function normalizePredicateArguments (argument: string | string[], prefix?: stri
 }
 
 function unwrap<ContextT> (
-  handler: ag.Middleware<ContextT> | any
-): ag.MiddlewarePromise<ContextT> {
+  handler: Airgram.Middleware<ContextT>
+): Airgram.MiddlewareFn<ContextT> {
   if (handler
     && 'middleware' in handler
     && typeof handler.middleware === 'function') {
-    return handler.middleware() as ag.MiddlewarePromise<ContextT>
+    return handler.middleware() as Airgram.MiddlewareFn<ContextT>
   }
-  return handler as (ag.MiddlewarePromise<ContextT>)
+  return handler as (Airgram.MiddlewareFn<ContextT>)
 }
 
-function safePassThru<ContextT> (): ag.MiddlewareFn<ContextT> {
-  return (ctx: ContextT, next: ag.NextFn | any) => typeof next === 'function' ? next() : Promise.resolve()
+function safePassThru<ContextT> (): Airgram.MiddlewareFn<ContextT> {
+  return (ctx: ContextT, next: Airgram.NextFn | any) => typeof next === 'function' ? next() : Promise.resolve()
 }
 
 function lazy<ContextT> (
-  factoryFn: ((ctx: ContextT) => Promise<ag.Middleware<ContextT>>) | any
-): ag.MiddlewarePromise<ContextT> {
+  factoryFn: ((ctx: ContextT) => Promise<Airgram.Middleware<ContextT>>)
+): Airgram.MiddlewareFn<ContextT> {
   if (typeof factoryFn !== 'function') {
     throw new Error('Argument must be a function')
   }
-  return (ctx: ContextT, next: (ag.NextFn)) => Promise.resolve(factoryFn(ctx))
-    .then((middleware: ag.Middleware<ContextT>) => unwrap<ContextT>(middleware)(ctx, next))
+  return (ctx: ContextT, next?: Airgram.NextFn) => Promise.resolve(factoryFn(ctx))
+    .then((middleware: Airgram.Middleware<ContextT>) => unwrap<ContextT>(middleware)(ctx, next || noop))
 }
 
-function mount<ContextT> (predicateType, ...fns): ag.MiddlewarePromise<ContextT> {
+function mount<ContextT> (predicateType: string | string[], ...fns: Airgram.Middleware[])
+  : Airgram.Middleware<ContextT> {
   const predicateTypes = normalizePredicateArguments(predicateType)
-  const predicate = (ctx) => predicateTypes.includes(ctx._)
+  const predicate = (ctx: ContextT) => '_' in ctx && predicateTypes.includes((ctx as any)._)
   return optional(predicate, ...fns)
 }
 
-export function fork (middleware) {
-  return (ctx, next) => {
-    setTimeout(unwrap(middleware), ctx, safePassThru(), 0)
+function fork (middleware: Airgram.Middleware) {
+  return (ctx: Airgram.Context, next: Airgram.NextFn) => {
+    setTimeout(unwrap(middleware), 0)
     return next()
   }
 }
@@ -56,31 +56,34 @@ export function fork (middleware) {
 //     .catch(() => next())
 // }
 //
-// export function drop<ContextT> (predicate): ag.MiddlewarePromise<ContextT> {
+// export function drop<ContextT> (predicate): Airgram.MiddlewarePromise<ContextT> {
 //   return branch(predicate, noop, safePassThru())
 // }
 
-export function filter<ContextT> (predicate): ag.MiddlewarePromise<ContextT> {
+function filter<ContextT> (predicate: any): Airgram.Middleware<ContextT> {
   return branch(predicate, safePassThru(), noop)
 }
 
-export function branch<ContextT> (
+function branch<ContextT> (
   predicate: any,
-  trueMiddleware: ag.MiddlewareFn<any>,
-  falseMiddleware: ag.MiddlewareFn<any>
-): ag.MiddlewarePromise<ContextT> {
+  trueMiddleware: Airgram.Middleware<ContextT>,
+  falseMiddleware: Airgram.Middleware<ContextT>
+): Airgram.MiddlewareFn<ContextT> {
   if (typeof predicate !== 'function') {
-    return predicate ? trueMiddleware : falseMiddleware
+    return unwrap<ContextT>(predicate ? trueMiddleware : falseMiddleware)
   }
   return lazy((ctx) => Promise.resolve(predicate(ctx))
     .then((value) => value ? trueMiddleware : falseMiddleware))
 }
 
-export function optional<ContextT> (predicate, ...fns): ag.MiddlewarePromise<ContextT> {
+function optional<ContextT> (predicate: any, ...fns: Array<Airgram.Middleware<ContextT>>):
+  Airgram.MiddlewareFn<ContextT> {
   return branch(predicate, compose(fns), safePassThru())
 }
 
-export function compose<ContextT> (middlewares: Array<ag.Middleware<ContextT>>): ag.MiddlewarePromise<ContextT> {
+function compose<ContextT> (
+  middlewares: Array<Airgram.Middleware<ContextT>>
+): Airgram.MiddlewareFn<ContextT> {
   if (!Array.isArray(middlewares)) {
     throw new Error('Middleware list must be an array')
   }
@@ -90,14 +93,14 @@ export function compose<ContextT> (middlewares: Array<ag.Middleware<ContextT>>):
   if (middlewares.length === 1) {
     return unwrap(middlewares[0])
   }
-  return (ctx: ContextT, next?: ag.MiddlewarePromise<ContextT>) => {
+  return (ctx: ContextT, next?: Airgram.MiddlewareFn<ContextT>) => {
     let index = -1
-    return (function execute (i) {
+    return (function execute (i: number): Promise<any> {
       if (i <= index) {
         return Promise.reject(new Error('next() called multiple times'))
       }
       index = i
-      const handler: ag.MiddlewarePromise<ContextT> | undefined = unwrap(middlewares[i]) || next
+      const handler: Airgram.MiddlewareFn<ContextT> | undefined = unwrap(middlewares[i]) || next
       if (!handler) {
         return Promise.resolve()
       }
@@ -110,27 +113,38 @@ export function compose<ContextT> (middlewares: Array<ag.Middleware<ContextT>>):
   }
 }
 
-class Composer<ContextT = any> implements ag.Composer<ContextT> {
-  protected handler: ag.MiddlewarePromise<ContextT | any>
+class Composer<ContextT = any> implements Airgram.Composer<ContextT> {
+  public static compose = compose
 
-  constructor (...fns: Array<ag.Middleware<ContextT>>) {
+  public static fork = fork
+
+  public static filter = filter
+
+  public static branch = branch
+
+  public static optional = optional
+
+  public static noop = noop
+
+  protected handler: Airgram.MiddlewareFn<ContextT | any>
+
+  constructor (...fns: Array<Airgram.Middleware<ContextT>>) {
     this.handler = compose<ContextT>(fns)
   }
 
-  public middleware<MiddlewareContextT = ContextT> (): ag.MiddlewarePromise<MiddlewareContextT> {
+  public middleware (): Airgram.MiddlewareFn<ContextT | any> {
     return this.handler
   }
 
   public on (
     predicateTypes: string | string[],
-    ...fns: Array<ag.Middleware<ContextT>>
-  ): ag.Composer<ContextT> {
-    return this.use(mount(predicateTypes, ...fns))
+    ...fns: Array<Airgram.Middleware<ContextT>>
+  ): void {
+    this.use(mount(predicateTypes, ...fns))
   }
 
-  public use (...fns: Array<ag.Middleware<ContextT>>): ag.Composer<ContextT> {
-    this.handler = compose<ContextT>([this.handler, ...fns])
-    return this
+  public use<ExtraContextT = {}> (...fns: Array<Airgram.Middleware<ContextT & ExtraContextT>>): void {
+    this.handler = compose<ContextT & ExtraContextT>([this.handler, ...fns])
   }
 }
 

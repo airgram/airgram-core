@@ -1,5 +1,5 @@
-import { apiFactory, ErrorUnion } from 'airgram-api'
-import { ApiMethods } from 'airgram-api/apiFactory'
+import { apiFactory, ErrorUnion } from '@airgram/api'
+import { ApiMethods } from '@airgram/api/apiFactory'
 import { Composer, createContext, Serializable, Updates } from './components'
 
 const DEFAULT_CONFIG: Partial<Airgram.Config<any>> = {

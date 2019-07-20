@@ -1,4 +1,4 @@
-import * as api from 'airgram-api'
+import * as api from '@airgram/api'
 
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 

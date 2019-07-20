@@ -1,5 +1,6 @@
 export * from './Context'
 export * from './Composer'
 export * from './Serializable'
+export * from './TDLibError'
 export * from './TdProvider'
 export * from './Updates'

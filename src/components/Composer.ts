@@ -15,11 +15,10 @@ function unwrap<ContextT> (
   handler: Airgram.Middleware<ContextT>
 ): Airgram.MiddlewareFn<ContextT> {
   if (handler
-    && 'middleware' in handler
-    && typeof handler.middleware === 'function') {
+    && 'middleware' in handler) {
     return handler.middleware() as Airgram.MiddlewareFn<ContextT>
   }
-  return handler as (Airgram.MiddlewareFn<ContextT>)
+  return handler
 }
 
 function safePassThru<ContextT> (): Airgram.MiddlewareFn<ContextT> {
@@ -29,9 +28,6 @@ function safePassThru<ContextT> (): Airgram.MiddlewareFn<ContextT> {
 function lazy<ContextT> (
   factoryFn: ((ctx: ContextT) => Promise<Airgram.Middleware<ContextT>>)
 ): Airgram.MiddlewareFn<ContextT> {
-  if (typeof factoryFn !== 'function') {
-    throw new Error('Argument must be a function')
-  }
   return (ctx: ContextT, next?: Airgram.NextFn) => Promise.resolve(factoryFn(ctx))
     .then((middleware: Airgram.Middleware<ContextT>) => unwrap<ContextT>(middleware)(ctx, next || noop))
 }

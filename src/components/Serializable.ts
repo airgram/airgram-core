@@ -1,7 +1,7 @@
 export class Serializable {
   private readonly dataObject: Record<string, any> = {}
 
-  constructor (data: Error) {
+  public constructor (data: Error | Record<string, any>) {
     if (!data) {
       return
     }
@@ -21,7 +21,7 @@ export class Serializable {
   public toString () {
     /// Circular Reference Exception
     const cache: any[] = []
-    return JSON.stringify(this.dataObject, (name, value) => {
+    return JSON.stringify(this.dataObject, (_name, value) => {
       if (typeof value === 'object' && value !== null) {
         if (cache.includes(value)) {
           return

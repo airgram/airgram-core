@@ -5,11 +5,14 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "rootDir": "src",
     "module": "commonjs",
     "sourceMap": true,
     "outDir": "dist",
     "declaration": true,
+    "resolveJsonModule": true,
     "lib": [
       "esnext",
       "dom"

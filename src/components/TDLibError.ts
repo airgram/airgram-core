@@ -1,6 +1,12 @@
 export class TDLibError extends Error {
-  constructor (public readonly code: number, message?: string, public readonly type?: string) {
+  public readonly code: number
+
+  public readonly type?: string
+
+  public constructor (code: number, message?: string, type?: string) {
     super(message)
+    this.type = type
+    this.code = code
     this.name = 'TDLibError'
     this.code = code
     this.type = type

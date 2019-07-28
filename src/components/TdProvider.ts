@@ -1,13 +1,13 @@
-import { Airgram } from '../Airgram'
+import { ApiRequest, PlainObjectToModelTransformer, ResponseBody, TdProvider as BaseTdProvider } from '../../types'
 
-export abstract class TdProvider<ClientT = any> implements Airgram.TdProvider {
+export abstract class TdProvider<ClientT = any> implements BaseTdProvider {
   protected client?: ClientT
 
   public abstract initialize (
-    handleUpdate: (update: Record<string, any>) => Promise<any>,
+    handleUpdate: (update: ResponseBody) => Promise<any>,
     handleError: (error: any) => void,
-    models?: Airgram.PlainObjectToModelTransformer
+    models?: PlainObjectToModelTransformer
   ): void
 
-  public abstract send (request: Airgram.ApiRequest): Promise<Airgram.TdResponse>
+  public abstract send (request: ApiRequest): Promise<ResponseBody>
 }

@@ -16,7 +16,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "compile": "npm run clean && tsc",
-    "deploy": "np --yolo",
+    "deploy": "np --any-branch --yolo",
     "dev": "nodemon --config nodemon.json",
     "lint": "eslint --fix ./src/**/*.ts --fix ./types/**/*.ts",
     "prepublishOnly": "npm run compile",

@@ -1,5 +1,4 @@
 export * from './airgram'
-export * from './middleware'
 export * from './api'
 export * from './api-methods'
 export * from './api-middleware'

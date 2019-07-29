@@ -1,9 +1,11 @@
 /* tslint:disable:no-empty */
 
-import { Composer as BaseComposer, Middleware, MiddlewareFn } from '../../types'
+import { BaseData, Composer as BaseComposer, Middleware, MiddlewareFn } from '../../types'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NextFn = () => any
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const noop: NextFn = (): any => {}
 
 function normalizePredicateArguments (argument: string | string[], prefix?: string): string[] {
@@ -23,7 +25,8 @@ function unwrap<ContextT> (
 }
 
 function safePassThru<ContextT> (): MiddlewareFn<ContextT> {
-  return (_ctx: ContextT, next: NextFn | any): Promise<any> => typeof next === 'function' ? next() : Promise.resolve()
+  return (
+    _ctx: ContextT, next: NextFn | unknown): Promise<unknown> => typeof next === 'function' ? next() : Promise.resolve()
 }
 
 function lazy<ContextT> (
@@ -43,9 +46,9 @@ function compose<ContextT> (middlewares: Middleware<ContextT>[]): MiddlewareFn<C
   if (middlewares.length === 1) {
     return unwrap(middlewares[0])
   }
-  return (ctx: ContextT, next?: MiddlewareFn<ContextT>): Promise<any> => {
+  return (ctx: ContextT, next?: MiddlewareFn<ContextT>): Promise<unknown> => {
     let index = -1
-    return (function execute (i: number): Promise<any> {
+    return (function execute (i: number): Promise<unknown> {
       if (i <= index) {
         return Promise.reject(new Error('next() called multiple times'))
       }
@@ -55,7 +58,7 @@ function compose<ContextT> (middlewares: Middleware<ContextT>[]): MiddlewareFn<C
         return Promise.resolve()
       }
       try {
-        return Promise.resolve(handler(ctx, (): Promise<Middleware<ContextT>> => execute(i + 1)))
+        return Promise.resolve(handler(ctx, (): Promise<unknown> => execute(i + 1)))
       } catch (error) {
         return Promise.reject(error)
       }
@@ -64,7 +67,7 @@ function compose<ContextT> (middlewares: Middleware<ContextT>[]): MiddlewareFn<C
 }
 
 function branch<ContextT> (
-  predicate: any,
+  predicate: unknown,
   trueMiddleware: Middleware<ContextT>,
   falseMiddleware: Middleware<ContextT>
 ): MiddlewareFn<ContextT> {
@@ -75,19 +78,19 @@ function branch<ContextT> (
     .then((value): Middleware<ContextT> => value ? trueMiddleware : falseMiddleware))
 }
 
-function optional<ContextT> (predicate: any, ...fns: Middleware<ContextT>[]):
-  MiddlewareFn<ContextT> {
+function optional<ContextT> (predicate: unknown, ...fns: Middleware<ContextT>[]): MiddlewareFn<ContextT> {
   return branch(predicate, compose(fns), safePassThru())
 }
 
-function mount<ContextT> (predicateType: string | string[], ...fns: Middleware<ContextT>[]): Middleware<ContextT> {
+function mount<ContextT extends { _: string }> (
+  predicateType: string | string[], ...fns: Middleware<ContextT>[]): Middleware<ContextT> {
   const predicateTypes = normalizePredicateArguments(predicateType)
-  const predicate = (ctx: ContextT): boolean => '_' in ctx && predicateTypes.includes((ctx as any)._)
+  const predicate = (ctx: ContextT): boolean => '_' in ctx && predicateTypes.includes(ctx._)
   return optional(predicate, ...fns)
 }
 
 function fork<ContextT> (middleware: Middleware<ContextT>): Middleware<ContextT> {
-  return (_ctx: any, next: NextFn): Middleware<ContextT> => {
+  return (_ctx: unknown, next: NextFn): Middleware<ContextT> => {
     setTimeout(unwrap(middleware), 0)
     return next()
   }
@@ -103,11 +106,11 @@ function fork<ContextT> (middleware: Middleware<ContextT>): Middleware<ContextT>
 //   return branch(predicate, noop, safePassThru())
 // }
 
-function filter<ContextT> (predicate: any): Middleware<ContextT> {
+function filter<ContextT> (predicate: unknown): Middleware<ContextT> {
   return branch(predicate, safePassThru(), noop)
 }
 
-class Composer<ContextT = any> implements BaseComposer<ContextT> {
+class Composer<ContextT extends BaseData> implements BaseComposer<ContextT> {
   public static compose = compose
 
   public static fork = fork
@@ -120,25 +123,25 @@ class Composer<ContextT = any> implements BaseComposer<ContextT> {
 
   public static noop = noop
 
-  protected handler: MiddlewareFn<ContextT | any>
+  protected handler: MiddlewareFn<ContextT>
 
   public constructor (...fns: Middleware<ContextT>[]) {
     this.handler = compose<ContextT>(fns)
   }
 
-  public middleware (): MiddlewareFn<ContextT | any> {
+  public middleware (): MiddlewareFn<ContextT> {
     return this.handler
   }
 
-  public on<T = any> (
+  public on (
     predicateTypes: string | string[],
-    ...fns: Middleware<T>[]
+    ...fns: Middleware<ContextT>[]
   ): void {
-    this.use(mount(predicateTypes, ...fns))
+    this.use(mount<ContextT>(predicateTypes, ...fns))
   }
 
-  public use (...fns: Middleware<any>[]): void {
-    this.handler = compose<any>([this.handler, ...fns])
+  public use (...fns: Middleware<ContextT>[]): void {
+    this.handler = compose<ContextT>([this.handler, ...fns])
   }
 }
 

@@ -1,9 +1,9 @@
-import { BaseContext, ContextOptions } from '../../types'
+import { BaseContext, ContextOptions, ContextState, GetStateFn, SetStateFn } from '../../types'
 
-export function createState (starting: Record<string, any>) {
+export function createState (starting: Record<string, unknown>): ContextState {
   let state = { ...starting }
-  const getState = () => ({ ...state })
-  const setState = (next: Record<string, any> | ((state: Record<string, any>) => Record<string, any>)) => {
+  const getState: GetStateFn = () => ({ ...state })
+  const setState: SetStateFn = (next: Record<string, unknown> | ((state: Record<string, unknown>) => Record<string, unknown>)) => {
     if (typeof next === 'function') {
       state = { ...state, ...next(state) }
     } else {
@@ -14,7 +14,7 @@ export function createState (starting: Record<string, any>) {
 }
 
 export function createContext<T extends BaseContext> ({ _, airgram, state, ...options }: ContextOptions): T {
-  const ctx: Record<string, any> = { ...options, ...createState(state) }
+  const ctx: Record<string, unknown> = { ...options, ...createState(state) }
   if (ctx.request) {
     Object.defineProperty(ctx, 'error', {
       get () {

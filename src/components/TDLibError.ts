@@ -21,7 +21,7 @@ export class TDLibError extends Error {
     }
   }
 
-  public toString () {
+  public toString (): string {
     return this.message
   }
 }

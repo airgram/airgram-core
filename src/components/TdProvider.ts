@@ -1,13 +1,19 @@
-import { ApiRequest, PlainObjectToModelTransformer, ResponseBody, TdProvider as BaseTdProvider } from '../../types'
+import {
+  ApiRequest,
+  Data,
+  PlainObjectToModelTransformer,
+  RequestContext,
+  TdProvider as BaseTdProvider
+} from '../../types'
 
-export abstract class TdProvider<ClientT = any> implements BaseTdProvider {
+export abstract class TdProvider<ClientT = unknown> implements BaseTdProvider {
   protected client?: ClientT
 
   public abstract initialize (
-    handleUpdate: (update: ResponseBody) => Promise<any>,
-    handleError: (error: any) => void,
+    handleUpdate: (update: Data) => Promise<unknown>,
+    handleError: (error: Error | string) => void,
     models?: PlainObjectToModelTransformer
   ): void
 
-  public abstract send (request: ApiRequest): Promise<ResponseBody>
+  public abstract send (request: ApiRequest): Promise<RequestContext<unknown, Data>>
 }

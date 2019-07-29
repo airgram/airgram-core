@@ -18,7 +18,7 @@
     "compile": "npm run clean && tsc",
     "deploy": "np --yolo",
     "dev": "nodemon --config nodemon.json",
-    "lint": "eslint --fix src/**/*.ts types/**/*.ts",
+    "lint": "eslint --fix ./src/**/*.ts --fix ./types/**/*.ts",
     "prepublishOnly": "npm run compile",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -40,7 +40,6 @@
     "nodemon": "^1.19.1",
     "np": "^5.0.3",
     "pre-commit": "^1.2.2",
-    "prettier": "^1.18.2",
     "ts-node": "^8.3.0",
     "typescript": "^3.5.3"
   }

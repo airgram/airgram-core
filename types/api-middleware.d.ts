@@ -1,9 +1,9 @@
 /* tslint:disable:unified-signatures max-line-length */
 
-import { Middleware, RequestContext, ResponseBody, UpdateContext } from './airgram'
+import { BaseData, Data, Middleware, RequestContext, UpdateContext } from './airgram'
 import * as api from './api'
 
-export interface OnMiddleware<ContextT = {}> {
+export interface MiddlewareOn<ContextT = {}> {
   // API
   (
     predicateTypes: 'acceptCall',
@@ -1956,8 +1956,8 @@ export interface OnMiddleware<ContextT = {}> {
     ...fns: Middleware<UpdateContext<api.UpdatePoll> & ContextT>[]
   ): void;
 
-  <ResponseT extends ResponseBody = ResponseBody> (
+  <ResponseT extends BaseData = Data> (
     predicateTypes: string | string[],
-    ...fns: Middleware<(RequestContext<any, ResponseT> | UpdateContext<ResponseT>) & ContextT>[]
+    ...fns: Middleware<(RequestContext<unknown, ResponseT> | UpdateContext<ResponseT>) & ContextT>[]
   ): void;
 }

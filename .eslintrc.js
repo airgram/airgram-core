@@ -20,8 +20,15 @@ module.exports = {
   rules: {
     // allow debugger during development
     'no-debugger': process.env.NODE_ENV === 'production' ? 2 : 0,
-    '@typescript-eslint/no-explicit-any': 0,
+    '@typescript-eslint/no-explicit-any': [1, {
+      fixToUnknown: false,
+      ignoreRestArgs: true
+    }],
     '@typescript-eslint/indent': 0,
-    '@typescript-eslint/explicit-function-return-type': 0
+    '@typescript-eslint/explicit-function-return-type': [1, {
+      allowExpressions: true,
+      allowTypedFunctionExpressions: true,
+      allowHigherOrderFunctions: true
+    }]
   }
 }

@@ -4,7 +4,6 @@ import { MiddlewareOn } from './api-middleware'
 
 type PropType<T, PropT extends keyof T> = T[PropT]
 type Predicate<T extends BaseData> = PropType<NonNullable<T>, '_'>
-type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 type ClassType<T> = new (...args: unknown[]) => T
 
 export type ErrorHandler = (error: Error, ctx?: Record<string, any>) => unknown
@@ -65,7 +64,7 @@ export interface ApiRequestOptions {
 export interface ApiResponse<ParamsT, ResultT extends BaseData> {
   _: Predicate<ResultT> | 'error';
   request: ApiRequest<ParamsT>;
-  response?: ResultT | api.ErrorUnion;
+  response: ResultT | api.ErrorUnion;
   data?: ResultT;
   error?: api.ErrorUnion;
 }
@@ -119,7 +118,8 @@ export interface BaseContext extends ContextState {
 }
 
 export interface RequestContext<ParamsT, ResultT extends BaseData>
-  extends BaseContext, ApiResponse<ParamsT, ResultT> {
+  extends BaseContext, Omit<ApiResponse<ParamsT, ResultT>, 'response'> {
+  response?: ResultT | api.ErrorUnion;
 }
 
 export interface UpdateContext<UpdateT extends BaseData> extends BaseContext {

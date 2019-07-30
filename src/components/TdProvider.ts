@@ -1,10 +1,4 @@
-import {
-  ApiRequest,
-  Data,
-  PlainObjectToModelTransformer,
-  RequestContext,
-  TdProvider as BaseTdProvider
-} from '../../types'
+import { ApiRequest, Data, PlainObjectToModelTransformer, TdProvider as BaseTdProvider } from '../../types'
 
 export abstract class TdProvider<ClientT = unknown> implements BaseTdProvider {
   protected client?: ClientT
@@ -15,5 +9,5 @@ export abstract class TdProvider<ClientT = unknown> implements BaseTdProvider {
     models?: PlainObjectToModelTransformer
   ): void
 
-  public abstract send (request: ApiRequest): Promise<RequestContext<unknown, Data>>
+  public abstract send (request: ApiRequest): Promise<Data>
 }

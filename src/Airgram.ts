@@ -29,7 +29,7 @@ const getDefaultConfig = <T> (): Partial<Config<T>> => ({
   systemVersion: 'UNKNOWN VERSION'
 })
 
-export class Airgram<ContextT extends Data, ProviderT extends TdProvider> implements Instance<ContextT, ProviderT> {
+export class Airgram<ContextT, ProviderT extends TdProvider> implements Instance<ContextT, ProviderT> {
   public readonly config: Config<ContextT, ProviderT>
 
   public handleError: ErrorHandler

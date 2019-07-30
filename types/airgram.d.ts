@@ -80,7 +80,7 @@ export interface TdProvider {
     models?: PlainObjectToModelTransformer
   ): void;
 
-  send (request: ApiRequest): Promise<RequestContext<unknown, Data>>;
+  send (request: ApiRequest): Promise<Data>;
 }
 
 export interface BaseData {

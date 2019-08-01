@@ -89,7 +89,7 @@ export class Airgram<ContextT extends Airgram.Context, ProviderT extends Airgram
     }
 
     this.bootstrapMiddleware()
-    setTimeout(() => this.api.getAuthorizationState(), 0)
+    setTimeout(this.api.getAuthorizationState, 0)
   }
 
   public get name (): string {
@@ -149,15 +149,15 @@ export class Airgram<ContextT extends Airgram.Context, ProviderT extends Airgram
                 'enableStorageOptimizer',
                 'ignoreFileNames'
               ]
-              await this.api.setTdlibParameters({
+              this.api.setTdlibParameters({
                 parameters: { _: 'tdlibParameters', ...pick(this.config, keys) }
-              })
+              }).catch(this.handleError)
               break
             }
             case 'authorizationStateWaitEncryptionKey': {
-              await this.api.checkDatabaseEncryptionKey({
+              this.api.checkDatabaseEncryptionKey({
                 encryptionKey: this.config.databaseEncryptionKey
-              })
+              }).catch(this.handleError)
               break
             }
             default: {
@@ -167,7 +167,6 @@ export class Airgram<ContextT extends Airgram.Context, ProviderT extends Airgram
                   deferred = null
                 }
               }, 0)
-              return false
             }
           }
         }

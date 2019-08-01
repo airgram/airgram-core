@@ -1,6 +1,22 @@
-import { apiFactory, ErrorUnion } from '@airgram/api'
+import { apiFactory, ErrorUnion, UpdateAuthorizationState } from '@airgram/api'
 import { ApiMethods } from '@airgram/api/apiFactory'
 import { Composer, createContext, Serializable, Updates } from './components'
+import { pick } from './helpers'
+
+interface Deferred {
+  promise: Promise<void>,
+  resolve: () => any
+  reject: (error: Error) => any
+}
+
+function createDeferred (): Deferred {
+  const deferred: Record<string, any> = {}
+  deferred.promise = new Promise<void>((resolve, reject) => {
+    deferred.resolve = resolve
+    deferred.reject = reject
+  })
+  return deferred as Deferred
+}
 
 const DEFAULT_CONFIG: Partial<Airgram.Config<any>> = {
   applicationVersion: '0.1.0',
@@ -72,6 +88,7 @@ export class Airgram<ContextT extends Airgram.Context, ProviderT extends Airgram
       })
     }
 
+    this.bootstrapMiddleware()
     setTimeout(() => this.api.getAuthorizationState(), 0)
   }
 
@@ -102,6 +119,65 @@ export class Airgram<ContextT extends Airgram.Context, ProviderT extends Airgram
         .then((response: Airgram.TdResponse) => ctx.response = response)
         .then(next)
     )
+  }
+
+  private bootstrapMiddleware (): void {
+    let deferred: Deferred | null = createDeferred()
+    this.use(async (ctx, next) => {
+      if (!deferred) {
+        return next()
+      }
+      if (ctx.update) {
+        if (ctx._ === 'updateAuthorizationState') {
+          const update: UpdateAuthorizationState = ctx.update
+          switch (update.authorizationState._) {
+            case 'authorizationStateWaitTdlibParameters': {
+              const keys: Array<keyof Airgram.TdLibConfig> = [
+                'useTestDc',
+                'databaseDirectory',
+                'filesDirectory',
+                'useFileDatabase',
+                'useChatInfoDatabase',
+                'useMessageDatabase',
+                'useSecretChats',
+                'apiId',
+                'apiHash',
+                'systemLanguageCode',
+                'deviceModel',
+                'systemVersion',
+                'applicationVersion',
+                'enableStorageOptimizer',
+                'ignoreFileNames'
+              ]
+              await this.api.setTdlibParameters({
+                parameters: { _: 'tdlibParameters', ...pick(this.config, keys) }
+              })
+              break
+            }
+            case 'authorizationStateWaitEncryptionKey': {
+              await this.api.checkDatabaseEncryptionKey({
+                encryptionKey: this.config.databaseEncryptionKey
+              })
+              break
+            }
+            default: {
+              setTimeout(() => {
+                if (deferred) {
+                  deferred.resolve()
+                  deferred = null
+                }
+              }, 0)
+              return false
+            }
+          }
+        }
+        return next()
+      } else if (['setTdlibParameters', 'checkDatabaseEncryptionKey'].includes(ctx._)) {
+        return next()
+      } else {
+        return deferred.promise.then(next)
+      }
+    })
   }
 
   private callApi<ParamsT, ResponseT> (
